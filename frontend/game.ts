@@ -45,10 +45,13 @@ export class Game {
   }
 
   private initCamera() {
-    this._camera = new Babylon.ArcRotateCamera('camera_main', 0, 0, 10, Babylon.Vector3.Zero(), this._scene);
-    this._camera.setPosition(new Vector3(8, 16, 0));
-    this._camera.attachControl(this._canvas, true);
-    console.log(this._camera.inputs);
+    const camera = this._camera = new Babylon.ArcRotateCamera('camera_main', 0, 0, 10, Babylon.Vector3.Zero(), this._scene);
+    camera.setPosition(new Vector3(8, 16, 0));
+    this._camera.attachControl(this._canvas);
+    this._camera.panningSensibility = 0;
+    const mouse = <Babylon.ArcRotateCameraPointersInput>this.camera.inputs.attached.pointers;
+    mouse.buttons = [1];
+    console.log(camera.inputs.attached);
   }
 
   private initKeys() {
@@ -60,6 +63,10 @@ export class Game {
     actionManager.registerAction(new Babylon.ExecuteCodeAction(Babylon.ActionManager.OnKeyUpTrigger, e => {
       this._key[e.sourceEvent.key] = e.sourceEvent.type == 'keydown';
     }));
+
+    this._canvas.addEventListener('contextmenu', e => {
+      e.preventDefault();
+    })
 
     this._canvas.addEventListener('click', e => {
       const pickResult = this.scene.pick(e.x, e.y);
