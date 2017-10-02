@@ -213,7 +213,6 @@ class Player extends Entity {
     }
   }
 
-  // TODO: Make the particle system work!!!
   initTargetMesh() {
     this._targetMesh = Babylon.Mesh.CreateSphere('player_target', 10, 1, this.game.scene);
 
