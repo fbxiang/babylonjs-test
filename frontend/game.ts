@@ -1,9 +1,8 @@
-import * as Cannon from 'cannon';
-import { Vector3 } from 'babylonjs';
+import { Vector3, Color4 } from 'babylonjs';
 import * as Babylon from 'babylonjs';
+import { Debug } from './debug';
 
-// Babylon is ridiculous sometimes
-window.CANNON = Cannon;
+Debug.forwardVector = true;
 
 export class Game {
   _canvas: HTMLCanvasElement;
@@ -49,7 +48,7 @@ export class Game {
     this._camera = new Babylon.ArcRotateCamera('camera_main', 0, 0, 10, Babylon.Vector3.Zero(), this._scene);
     this._camera.setPosition(new Vector3(8, 16, 0));
     this._camera.attachControl(this._canvas, true);
-    this._camera.parent = this.player._mesh;
+    console.log(this._camera.inputs);
   }
 
   private initKeys() {
@@ -78,6 +77,7 @@ export class Game {
 
   render() {
     this.scene.render();
+    this.camera.target = this.player.position;
     const deltaTime = this.scene.getLastFrameDuration() / 1000;
     this.player.update(deltaTime);
   }
@@ -87,8 +87,24 @@ export class Game {
   }
 }
 
+class Entity {
+  _mesh: Babylon.Mesh;
+  private _forwardMesh: Babylon.Mesh;
+  constructor(public name: string, protected game: Game) {
+  };
 
-class Player {
+  update(deltaTime: number) {
+    if (Debug.forwardVector && !this._forwardMesh) {
+      this._forwardMesh = Babylon.Mesh.CreateLines(`${name}: forward`, [Vector3.Zero(), Vector3.Forward()],
+                                                 this.game.scene, false);
+      this._forwardMesh.parent = this._mesh;
+    } else {
+      this._forwardMesh = null;
+    }
+  }
+}
+
+class Player extends Entity {
   _mesh: Babylon.Mesh;
   _targetMesh: Babylon.Mesh;
   _targetParticle: Babylon.ParticleSystem;
@@ -106,17 +122,22 @@ class Player {
       this._targetMesh.visibility = 0;
     }
   }
-  get target() { return this._target; }
   get mesh() { return this._mesh; }
+  get target() { return this._target; }
   get position() { return this._mesh.position }
-  get forward() {
-    return new Vector3(Math.sin(this._mesh.rotation.y), 0, Math.cos(this._mesh.rotation.y));
-  }
+
 
   update(deltaTime: number) {
+    super.update(deltaTime);
     if (this.target) {
       const dx = this.target.x - this.position.x;
       const dz = this.target.z - this.position.z;
+
+      const angle = dz > 0 ? Math.atan(dx/dz) : Math.atan(dx/dz)+Math.PI;
+
+      this.mesh.rotationQuaternion = Babylon.Quaternion.RotationAxis(
+        Babylon.Axis.Y, angle);
+
       if (Math.abs(dx) >= 0.1 || Math.abs(dz) >= 0.1)
         this.mesh.physicsImpostor.setLinearVelocity(new Vector3(dx, 0, dz).normalize().multiplyByFloats(this.speed, this.speed, this.speed));
       else {
@@ -126,11 +147,9 @@ class Player {
     }
   }
 
-  constructor(private game: Game) {
+  constructor(game: Game) {
+    super('player', game);
     this._mesh = Babylon.Mesh.CreateBox('player', 1, game.scene);
-    this._mesh.position.y += 10;
-    this._mesh.checkCollisions = true;
-    this._mesh.ellipsoid = new Vector3(1, 1, 1);
 
     const playerMaterial = new Babylon.StandardMaterial('player', game.scene);
     playerMaterial.diffuseColor = Babylon.Color3.Green();
@@ -146,8 +165,8 @@ class Player {
     this._targetMesh = Babylon.Mesh.CreateSphere('player_target', 10, 1, this.game.scene);
     this._targetMesh.visibility = 0;
     const targetParticleSystem = new Babylon.ParticleSystem('player_target_particle', 200, this.game.scene);
-    targetParticleSystem.color1 = new Babylon.Color4(0.7, 0.8, 1, 1);
-    targetParticleSystem.color2 = new Babylon.Color4(0.2, 0.5, 1.0, 1.0);
+    targetParticleSystem.color1 = new Color4(0.7, 0.8, 1, 1);
+    targetParticleSystem.color2 = new Color4(0.2, 0.5, 1.0, 1.0);
     targetParticleSystem.minSize = 0.1;
     targetParticleSystem.maxSize = 0.3;
     targetParticleSystem.direction1 = new Vector3(-7, 8, 3);
@@ -157,7 +176,7 @@ class Player {
   }
 
   initPhysics() {
-    this.mesh.physicsImpostor = new Babylon.PhysicsImpostor(this._mesh, Babylon.PhysicsImpostor.BoxImpostor, {
+    this.mesh.physicsImpostor = new Babylon.PhysicsImpostor(this.mesh, Babylon.PhysicsImpostor.BoxImpostor, {
       mass: 10, restitution: 0.01, friction: 0
     }, this.game.scene);
     this.mesh.physicsImpostor.executeNativeFunction((world, body) => {
