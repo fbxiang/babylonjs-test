@@ -2,6 +2,7 @@ import { Vector3, Color4 } from 'babylonjs';
 import * as Babylon from 'babylonjs';
 import { Debug } from './debug';
 import * as _ from 'lodash';
+import { Textures } from './resources';
 
 Debug.forwardVector = true;
 
@@ -55,7 +56,7 @@ export class Game {
   }
 
   private initGround() {
-    const ground = Babylon.Mesh.CreateGround('ground', 100, 20, 2);
+    const ground = Babylon.Mesh.CreateGround('ground', 100, 20, 2, this.scene);
     ground.material = new Babylon.StandardMaterial('material_ground', this.scene);
     ground.material.alpha = 0.5;
 
@@ -95,8 +96,9 @@ export class Game {
   }
 
   initSkybox() {
-    const texture = new Babylon.CubeTexture('assets/textures/skybox/miramar', this.scene);
+    const texture = new Babylon.CubeTexture(Textures.SKYBOX, this.scene);
     const skybox = Babylon.MeshBuilder.CreateBox("skybox", {size:1000.0}, this.scene);
+    skybox.isPickable = false;
     const skyboxMaterial = new Babylon.StandardMaterial("skybox", this.scene);
     skyboxMaterial.backFaceCulling = false;
     skyboxMaterial.reflectionTexture = texture;
@@ -165,11 +167,12 @@ class Player extends Entity {
   set target(v: Vector3) {
     this._target = v;
     if (v) {
-      this._targetMesh.visibility = 1;
+      // this._targetMesh.isVisible = true;
       this._targetMesh.position = v;
       this._targetParticle.start();
     } else {
-      this._targetMesh.visibility = 0;
+      this._targetMesh.isVisible = false;
+      this._targetParticle.stop();
     }
   }
   get mesh() { return this._mesh; }
@@ -189,7 +192,6 @@ class Player extends Entity {
 
     this.initPhysics();
   }
-
 
   update(deltaTime: number) {
     super.update(deltaTime);
@@ -215,17 +217,21 @@ class Player extends Entity {
   initTargetMesh() {
     this._targetMesh = Babylon.Mesh.CreateSphere('player_target', 10, 1, this.game.scene);
 
-    this._targetMesh.visibility = 0;
+    this._targetMesh.isVisible = false;
     this._targetMesh.isPickable = false;
 
-    const targetParticleSystem = new Babylon.ParticleSystem('player_target_particle', 200, this.game.scene);
+    const targetParticleSystem = new Babylon.ParticleSystem('player_target_particle', 1000, this.game.scene);
+    targetParticleSystem.emitter = this._targetMesh;
+    targetParticleSystem.particleTexture = new Babylon.Texture(Textures.FLARE, this.game.scene);
+
     targetParticleSystem.color1 = new Color4(0.7, 0.8, 1, 1);
     targetParticleSystem.color2 = new Color4(0.2, 0.5, 1.0, 1.0);
-    targetParticleSystem.minSize = 0.1;
-    targetParticleSystem.maxSize = 0.3;
-    targetParticleSystem.direction1 = new Vector3(-7, 8, 3);
-    targetParticleSystem.direction1 = new Vector3(7, 8, -3);
-    targetParticleSystem.targetStopDuration = 3;
+    targetParticleSystem.minSize = 1;
+    targetParticleSystem.maxSize = 3;
+    targetParticleSystem.emitRate = 20;
+    targetParticleSystem.direction1 = new Vector3(-2, 16, 2);
+    targetParticleSystem.direction2 = new Vector3(2, 16, -2);
+    targetParticleSystem.targetStopDuration = 1;
     this._targetParticle = targetParticleSystem;
   }
 
