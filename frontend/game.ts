@@ -32,7 +32,9 @@ export class Game {
     this._light = new Babylon.HemisphericLight('light_main', new Vector3(1, 1, 0), this._scene);
     this._player = new Player(this);
     this.initCamera();
-    this.initKeys();
+    this.initInputs();
+    this.initSkybox();
+    this.initGround();
     window.addEventListener('resize', () => this.engine.resize());
   }
 
@@ -41,8 +43,6 @@ export class Game {
     const gravity = new Vector3(0, -9.81, 0);
     this._scene.enablePhysics(gravity, new Babylon.CannonJSPlugin());
 
-    const ground = Babylon.Mesh.CreateGround('ground', 100, 20, 2);
-    ground.physicsImpostor = new Babylon.PhysicsImpostor(ground, Babylon.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, this._scene);
   }
 
   private initCamera() {
@@ -54,7 +54,15 @@ export class Game {
     mouse.buttons = [1];
   }
 
-  private initKeys() {
+  private initGround() {
+    const ground = Babylon.Mesh.CreateGround('ground', 100, 20, 2);
+    ground.material = new Babylon.StandardMaterial('material_ground', this.scene);
+    ground.material.alpha = 0.5;
+
+    ground.physicsImpostor = new Babylon.PhysicsImpostor(ground, Babylon.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, this._scene);
+  }
+
+  private initInputs() {
     const actionManager = this._scene.actionManager = new Babylon.ActionManager(this._scene);
     actionManager.registerAction(new Babylon.ExecuteCodeAction(Babylon.ActionManager.OnKeyDownTrigger, e => {
       this._key[e.sourceEvent.key] = e.sourceEvent.type == 'keydown';
@@ -86,6 +94,18 @@ export class Game {
     })
   }
 
+  initSkybox() {
+    const texture = new Babylon.CubeTexture('assets/textures/skybox/miramar', this.scene);
+    const skybox = Babylon.MeshBuilder.CreateBox("skybox", {size:1000.0}, this.scene);
+    const skyboxMaterial = new Babylon.StandardMaterial("skybox", this.scene);
+    skyboxMaterial.backFaceCulling = false;
+    skyboxMaterial.reflectionTexture = texture;
+    skyboxMaterial.reflectionTexture.coordinatesMode = Babylon.Texture.SKYBOX_MODE;
+    skyboxMaterial.diffuseColor = new Babylon.Color3(0, 0, 0);
+    skyboxMaterial.specularColor = new Babylon.Color3(0, 0, 0);
+    skybox.material = skyboxMaterial;
+  }
+
   Input = {
     keydown: (key: string) => {
       return this.keydown[key];
@@ -104,7 +124,7 @@ export class Game {
     }
 
     this.camera.target = this.player.position;
-    this.camera.radius = _.clamp(this.camera.radius, 15, 30);
+    this.camera.radius = _.clamp(this.camera.radius, 10, 30);
     this.camera.radius
     const deltaTime = this.scene.getLastFrameDuration() / 1000;
     this.player.update(deltaTime);
@@ -170,6 +190,7 @@ class Player extends Entity {
     this.initPhysics();
   }
 
+
   update(deltaTime: number) {
     super.update(deltaTime);
     if (this.target) {
@@ -193,6 +214,7 @@ class Player extends Entity {
   // TODO: Make the particle system work!!!
   initTargetMesh() {
     this._targetMesh = Babylon.Mesh.CreateSphere('player_target', 10, 1, this.game.scene);
+
     this._targetMesh.visibility = 0;
     this._targetMesh.isPickable = false;
 
