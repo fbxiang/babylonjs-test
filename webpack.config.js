@@ -1,5 +1,7 @@
 var path = require('path');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
+var CopyWebpackPlugin = require('copy-webpack-plugin');
+var phaserModulePath = path.join(__dirname, '/node_modules/phaser');
 
 module.exports = {
   entry: "./frontend/index.ts",
@@ -12,11 +14,13 @@ module.exports = {
   },
   plugins: [new HtmlWebpackPlugin({
     template: "./frontend/index.html"
-  })],
+  }), new CopyWebpackPlugin([{
+    from: "frontend/assets", to: "assets"
+  }])],
   module: {
     loaders: [
       {test: /\.tsx?$/, loader: "ts-loader"},
-      {test: /\.css/, loader: "style-loader!css-loader"}
+      {test: /\.css/, loader: "style-loader!css-loader"},
     ]
   },
   devServer: {

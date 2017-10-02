@@ -1,21 +1,13 @@
-/// <reference path="../node_modules/phaser/typescript/phaser.d.ts" />
+import './style.css';
+import * as Babylon from 'babylonjs';
+import { Game } from './game';
 
-import * as $ from 'jquery';
-require('./style.css');
-import * as Phaser from 'phaser';
+const canvas = <HTMLCanvasElement>document.getElementById('render_canvas');
 
-const game = new Phaser.Game(800, 600, Phaser.AUTO, '', {
-  preload: preload, create: create, update: update
-})
+const game = new Game(canvas);
+game.start();
 
-function preload() {
-  
-}
 
-function create() {
-  
-}
 
-function update() {
-  
-}
+// Babylon.Mesh.CreateSphere('shpere', 16, 2).position.y += 1;
+
