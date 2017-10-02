@@ -225,12 +225,12 @@ class Player extends Entity {
 
     targetParticleSystem.color1 = new Color4(0.7, 0.8, 1, 1);
     targetParticleSystem.color2 = new Color4(0.2, 0.5, 1.0, 1.0);
-    targetParticleSystem.minSize = 1;
-    targetParticleSystem.maxSize = 3;
-    targetParticleSystem.emitRate = 20;
+    targetParticleSystem.minSize = 0.5;
+    targetParticleSystem.maxSize = 1.5;
+    targetParticleSystem.emitRate = 40;
     targetParticleSystem.direction1 = new Vector3(-2, 16, 2);
     targetParticleSystem.direction2 = new Vector3(2, 16, -2);
-    targetParticleSystem.targetStopDuration = 1;
+    // targetParticleSystem.targetStopDuration = 1;
     this._targetParticle = targetParticleSystem;
   }
 
