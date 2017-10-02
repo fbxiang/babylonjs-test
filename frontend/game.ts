@@ -94,10 +94,12 @@ class Entity {
   };
 
   update(deltaTime: number) {
-    if (Debug.forwardVector && !this._forwardMesh) {
-      this._forwardMesh = Babylon.Mesh.CreateLines(`${name}: forward`, [Vector3.Zero(), Vector3.Forward()],
-                                                 this.game.scene, false);
-      this._forwardMesh.parent = this._mesh;
+    if (Debug.forwardVector) {
+      if (!this._forwardMesh) {
+        this._forwardMesh = Babylon.Mesh.CreateLines(`${name}: forward`, [Vector3.Zero(), Vector3.Forward()],
+                                                     this.game.scene, false);
+        this._forwardMesh.parent = this._mesh;
+      }
     } else {
       this._forwardMesh = null;
     }
