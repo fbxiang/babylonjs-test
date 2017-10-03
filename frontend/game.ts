@@ -30,7 +30,7 @@ export class Game {
     }
     this._engine = new Babylon.Engine(this._canvas, true);
     this.initScene();
-    this._light = new Babylon.HemisphericLight('light_main', new Vector3(1, 1, 0), this._scene);
+    this._light = new Babylon.DirectionalLight('light_main', new Vector3(1, -1, 0), this._scene);
     this._player = new Player(this);
     this.initCamera();
     this.initInputs();
@@ -97,7 +97,7 @@ export class Game {
 
   initSkybox() {
     const texture = new Babylon.CubeTexture(Textures.SKYBOX, this.scene);
-    const skybox = Babylon.MeshBuilder.CreateBox("skybox", {size:1000.0}, this.scene);
+    const skybox = Babylon.MeshBuilder.CreateBox("skybox", { size: 1000.0 }, this.scene);
     skybox.isPickable = false;
     const skyboxMaterial = new Babylon.StandardMaterial("skybox", this.scene);
     skyboxMaterial.backFaceCulling = false;
@@ -149,6 +149,7 @@ class Entity {
         this._forwardMesh = Babylon.Mesh.CreateLines(`${name}: forward`, [Vector3.Zero(), Vector3.Forward()],
           this.game.scene, false);
         this._forwardMesh.parent = this._mesh;
+        this._forwardMesh.isPickable = false;
       }
     } else {
       this._forwardMesh = null;
@@ -161,13 +162,13 @@ class Player extends Entity {
   _targetMesh: Babylon.Mesh;
   _targetParticle: Babylon.ParticleSystem;
 
-  speed = 2;
+  grounded = false;
+  speed = 4;
   _target: Vector3;
 
   set target(v: Vector3) {
     this._target = v;
     if (v) {
-      // this._targetMesh.isVisible = true;
       this._targetMesh.position = v;
       this._targetParticle.start();
     } else {
@@ -181,36 +182,49 @@ class Player extends Entity {
 
   constructor(game: Game) {
     super('player', game);
-    this._mesh = Babylon.Mesh.CreateBox('player', 1, game.scene);
-    this._mesh.position.y = 1;
-
-    const playerMaterial = new Babylon.StandardMaterial('player', game.scene);
-    playerMaterial.diffuseColor = Babylon.Color3.Green();
-    this._mesh.material = playerMaterial;
-
+    this.initMesh();
     this.initTargetMesh();
-
     this.initPhysics();
   }
+
+  get velocity() { return this.mesh.physicsImpostor.getLinearVelocity(); }
+  set velocity(v: Vector3) { this.mesh.physicsImpostor.setLinearVelocity(v); }
 
   update(deltaTime: number) {
     super.update(deltaTime);
     if (this.target) {
       const dx = this.target.x - this.position.x;
       const dz = this.target.z - this.position.z;
-
       const angle = dz > 0 ? Math.atan(dx / dz) : Math.atan(dx / dz) + Math.PI;
-
-      this.mesh.rotationQuaternion = Babylon.Quaternion.RotationAxis(
-        Babylon.Axis.Y, angle);
-
-      if (Math.abs(dx) >= 0.1 || Math.abs(dz) >= 0.1)
-        this.mesh.physicsImpostor.setLinearVelocity(new Vector3(dx, 0, dz).normalize().multiplyByFloats(this.speed, this.speed, this.speed));
+      this.mesh.rotationQuaternion = Babylon.Quaternion.RotationAxis(Babylon.Axis.Y, angle);
+      if (Math.abs(dx) >= 0.2 || Math.abs(dz) >= 0.2) {
+        const v = new Vector3(dx, 0, dz).normalize().multiplyByFloats(this.speed, 0, this.speed);
+        v.y = this.velocity.y;
+        this.velocity = v;
+      }
       else {
-        this.mesh.physicsImpostor.setLinearVelocity(Vector3.Zero());
+        this.velocity = this.velocity.multiplyByFloats(0, 1, 0);
         this.target = null;
       }
     }
+    if (Math.abs(this.velocity.y) >= 1 ) {
+      this.grounded = false;
+    }
+
+    if (this.game.Input.keydown(' ') && this.grounded) {
+      this.mesh.physicsImpostor.applyImpulse(new Vector3(0, 10, 0), Vector3.Zero());
+    }
+  }
+
+  initMesh() {
+    this._mesh = Babylon.Mesh.CreateCylinder('player', 1, 1, 1, 0, 0, this.game.scene);
+    this._mesh.scaling = new Vector3(1, 2, 1);
+    this._mesh.position.y = 1;
+    this._mesh.isPickable = false;
+
+    const playerMaterial = new Babylon.StandardMaterial('player', this.game.scene);
+    playerMaterial.diffuseColor = Babylon.Color3.Green();
+    this._mesh.material = playerMaterial;
   }
 
   initTargetMesh() {
@@ -230,17 +244,21 @@ class Player extends Entity {
     targetParticleSystem.emitRate = 40;
     targetParticleSystem.direction1 = new Vector3(-2, 16, 2);
     targetParticleSystem.direction2 = new Vector3(2, 16, -2);
-    // targetParticleSystem.targetStopDuration = 1;
     this._targetParticle = targetParticleSystem;
   }
 
   initPhysics() {
     this.mesh.physicsImpostor = new Babylon.PhysicsImpostor(this.mesh, Babylon.PhysicsImpostor.BoxImpostor, {
-      mass: 10, restitution: 0.01, friction: 0
+      mass: 1, restitution: 0.01, friction: 0
     }, this.game.scene);
     this.mesh.physicsImpostor.executeNativeFunction((world, body) => {
       body.fixedRotation = true;
       body.updateMassProperties();
+      body.addEventListener('collide', e => {
+        if (e.contact.ri.y < 0) {
+          this.grounded = true;
+        }
+      })
     })
   }
 }
