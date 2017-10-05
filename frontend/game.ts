@@ -3,7 +3,7 @@ import * as Babylon from 'babylonjs';
 import { Debug } from './debug';
 import * as _ from 'lodash';
 import { Textures } from './resources';
-import { EntityPlayer } from './entity/entity';
+import { EntityPlayer } from './entity/entity-player';
 
 Debug.forwardVector = true;
 
@@ -44,7 +44,6 @@ export class Game {
     this._scene = new Babylon.Scene(this._engine);
     const gravity = new Vector3(0, -9.81, 0);
     this._scene.enablePhysics(gravity, new Babylon.CannonJSPlugin());
-
   }
 
   private initCamera() {
@@ -144,7 +143,7 @@ export class Game {
     }
 
     this.camera.target = this.player.position;
-    this.camera.radius = _.clamp(this.camera.radius, 10, 30);
+    this.camera.radius = _.clamp(this.camera.radius, 10, 100);
     this.camera.radius
     const deltaTime = this.scene.getLastFrameDuration() / 1000;
     this.player.update(deltaTime);
