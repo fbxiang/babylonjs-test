@@ -13,15 +13,21 @@ export abstract class EntityProjectileBase extends EntityPhysics {
   }
 
   initMesh() {
-    this._mesh = new Babylon.Mesh('mesh_' + this.name, this.game.scene);
-    // this._mesh = Babylon.Mesh.CreateSphere(`mesh_${this.name}`, 10, 1, this.game.scene, true);
+    // this._mesh = new Babylon.Mesh('mesh_' + this.name, this.game.scene);
+    this._mesh = Babylon.Mesh.CreateSphere(`mesh_${this.name}`, 10, 1, this.game.scene, true);
   }
 
   initPhysics() {
-    this._mesh.physicsImpostor = new Babylon.PhysicsImpostor(this.mesh, Babylon.PhysicsImpostor.SphereImpostor, {
+    this.mesh.physicsImpostor = new Babylon.PhysicsImpostor(this.mesh, Babylon.PhysicsImpostor.SphereImpostor, {
       mass: 1, restitution: 0, friction: 0
     }, this.game.scene);
     this.useGravity = false;
+    this.mesh.physicsImpostor.physicsBody.collisionResponse = false;
+    this.mesh.physicsImpostor.onCollideEvent = (self, other) => {
+      if (other.object['parentEntity']) {
+        this.onHit(<any>other.object);
+      }
+    }
   }
 
   destroy() {

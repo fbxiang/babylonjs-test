@@ -12,6 +12,17 @@ export abstract class EntityBase {
   expirable = true;
   destroying = false;
 
+  get position() {
+    if (this.mesh)
+      return this.mesh.position;
+    return null;
+  }
+
+  set position(p: Vector3) {
+    if (this.mesh)
+      this.mesh.position = p;
+  }
+
   get mesh() { return this._mesh; }
   private _forwardMesh: Babylon.Mesh;
   constructor(public name: string, protected game: Game) {
@@ -79,3 +90,18 @@ export abstract class EntityPhysics extends EntityBase {
   abstract initPhysics(): void;
 }
 
+
+export class EntityDebug extends EntityPhysics {
+  constructor(name, game) {
+    super(name, game);
+    this.expirable = false;
+  }
+
+  initMesh() {
+    this._mesh = Babylon.Mesh.CreateBox(`mesh_${this.name}`, 3, this.game.scene, true);
+  }
+
+  initPhysics() {
+    this.mesh.physicsImpostor = new Babylon.PhysicsImpostor(this.mesh, Babylon.PhysicsImpostor.BoxImpostor);
+  }
+}

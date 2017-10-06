@@ -4,7 +4,7 @@ import { Debug } from './debug';
 import * as _ from 'lodash';
 import { Textures } from './resources';
 import { EntityPlayer } from './entity/entity-player';
-import { EntityBase } from './entity/entity';
+import { EntityBase, EntityDebug } from './entity/entity';
 
 Debug.forwardVector = true;
 
@@ -34,12 +34,12 @@ export class Game {
     this._engine = new Babylon.Engine(this._canvas, true);
     this.initScene();
     this._light = new Babylon.DirectionalLight('light_main', new Vector3(1, -1, 0), this._scene);
-    this._player = new EntityPlayer(this);
     this.initCamera();
     this.initInputs();
     this.initSkybox();
-    this.initGround();
+    this.initLevel();
     window.addEventListener('resize', () => this.engine.resize());
+    this._player = new EntityPlayer(this);
     this.spawn(this._player);
   }
 
@@ -58,12 +58,15 @@ export class Game {
     mouse.buttons = [1];
   }
 
-  private initGround() {
+  private initLevel() {
     const ground = Babylon.Mesh.CreateGround('ground', 100, 20, 2, this.scene);
     ground.material = new Babylon.StandardMaterial('material_ground', this.scene);
     ground.material.alpha = 0.5;
-
     ground.physicsImpostor = new Babylon.PhysicsImpostor(ground, Babylon.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, this._scene);
+
+    const targetEntity = new EntityDebug('debug1', this);
+    this.spawn(targetEntity);
+    targetEntity.position = new Vector3(-6, 2, 0);
   }
 
   private initInputs() {

@@ -8,7 +8,6 @@ import { EntityShinyBall } from './entity-projectile';
 export class EntityPlayer extends EntityPhysics {
   _targetMesh: Babylon.Mesh;
   _targetParticle: Babylon.ParticleSystem;
-
   grounded = true;
   speed = 4;
   _target: Vector3;
@@ -105,7 +104,7 @@ export class EntityPlayer extends EntityPhysics {
   initMesh() {
     this._mesh = Babylon.Mesh.CreateCylinder('mesh_player', 1, 1, 1, 0, 0, this.game.scene);
     this._mesh.scaling = new Vector3(1, 2, 1);
-    this._mesh.position.y = 1;
+    this._mesh.position.y = 5;
     this._mesh.isPickable = false;
 
     const playerMaterial = new Babylon.StandardMaterial('player', this.game.scene);
@@ -115,14 +114,11 @@ export class EntityPlayer extends EntityPhysics {
 
   initTargetMesh() {
     this._targetMesh = Babylon.Mesh.CreateSphere('player_target', 10, 1, this.game.scene);
-
     this._targetMesh.isVisible = false;
     this._targetMesh.isPickable = false;
-
     const targetParticleSystem = new Babylon.ParticleSystem('player_target_particle', 1000, this.game.scene);
     targetParticleSystem.emitter = this._targetMesh;
     targetParticleSystem.particleTexture = new Babylon.Texture(Textures.FLARE, this.game.scene);
-
     targetParticleSystem.color1 = new Color4(0.7, 0.8, 1, 1);
     targetParticleSystem.color2 = new Color4(0.2, 0.5, 1.0, 1.0);
     targetParticleSystem.minSize = 0.5;
