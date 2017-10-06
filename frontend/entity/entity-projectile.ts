@@ -2,7 +2,7 @@ import { Vector3, Color4 } from 'babylonjs';
 import * as Babylon from 'babylonjs';
 import { Game } from '../game';
 import { Textures } from '../resources';
-import { EntityPhysics, IEntityMesh } from './entity';
+import { EntityPhysics, EntityLiving, IEntityMesh, EntityDebug } from './entity';
 
 export abstract class EntityProjectileBase extends EntityPhysics {
   _particleSystem: Babylon.ParticleSystem;
@@ -62,7 +62,10 @@ export class EntityShinyBall extends EntityProjectileBase {
   }
 
   onHit(mesh: Babylon.Mesh & IEntityMesh) {
-    console.log(mesh.parentEntity);
+    this.destroying = true;
+    if (mesh.parentEntity instanceof EntityLiving) {
+      mesh.parentEntity.damage(20);
+    }
   }
 
   update(deltaTime: number) {

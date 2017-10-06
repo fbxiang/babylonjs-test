@@ -2,10 +2,10 @@ import { Textures } from '../resources';
 import { Game } from '../game';
 import { Vector3, Color4, Quaternion } from 'babylonjs';
 import * as Babylon from 'babylonjs';
-import { EntityPhysics } from './entity';
+import { EntityPhysics, EntityLiving } from './entity';
 import { EntityShinyBall } from './entity-projectile';
 
-export class EntityPlayer extends EntityPhysics {
+export class EntityPlayer extends EntityLiving{
   _targetMesh: Babylon.Mesh;
   _targetParticle: Babylon.ParticleSystem;
   grounded = true;
@@ -142,5 +142,9 @@ export class EntityPlayer extends EntityPhysics {
         }
       })
     })
+  }
+
+  onDeath() {
+    console.log('You are so dead');
   }
 }
