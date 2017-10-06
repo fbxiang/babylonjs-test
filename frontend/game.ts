@@ -4,6 +4,7 @@ import { Debug } from './debug';
 import * as _ from 'lodash';
 import { Textures } from './resources';
 import { EntityPlayer } from './entity/entity-player';
+import { EntityBase } from './entity/entity';
 
 Debug.forwardVector = true;
 
@@ -15,6 +16,7 @@ export class Game {
   _light: Babylon.Light;
   _player: EntityPlayer;
   _key = {};
+  _entities: Set<EntityBase> = new Set();
 
   get keydown() { return this._key; }
   get scene() { return this._scene; }
@@ -38,6 +40,7 @@ export class Game {
     this.initSkybox();
     this.initGround();
     window.addEventListener('resize', () => this.engine.resize());
+    this.spawn(this._player);
   }
 
   private initScene() {
@@ -113,7 +116,7 @@ export class Game {
   }
 
   initSkybox() {
-    const texture = new Babylon.CubeTexture(Textures.SKYBOX, this.scene);
+    const texture = Textures.GetSkyBox(Textures.SKYBOX, this);
     const skybox = Babylon.MeshBuilder.CreateBox("skybox", { size: 1000.0 }, this.scene);
     skybox.isPickable = false;
     const skyboxMaterial = new Babylon.StandardMaterial("skybox", this.scene);
@@ -132,6 +135,10 @@ export class Game {
     mouse: { x: -1, y: -1 }
   }
 
+  spawn(entity: EntityBase) {
+    this._entities.add(entity);
+  }
+
   render() {
     this.scene.render();
 
@@ -145,8 +152,19 @@ export class Game {
     this.camera.target = this.player.position;
     this.camera.radius = _.clamp(this.camera.radius, 10, 100);
     this.camera.radius
-    const deltaTime = this.scene.getLastFrameDuration() / 1000;
-    this.player.update(deltaTime);
+    const deltaTime = this.scene.getLastFrameDuration() / 100;
+
+    const destroyList: EntityBase[] = [];
+    this._entities.forEach(entity => {
+      entity.update(deltaTime);
+      if (entity.destroying) {
+        destroyList.push(entity);
+      }
+    })
+    destroyList.forEach(entity => {
+      entity.destroy()
+      this._entities.delete(entity);
+    })
   }
 
   start() {

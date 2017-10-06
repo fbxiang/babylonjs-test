@@ -61,15 +61,18 @@ export class EntityPlayer extends EntityPhysics {
     }
   }
 
+  counter = 0;
   activate(point: Vector3, mesh: Babylon.AbstractMesh) {
     const dx = point.x - this.position.x;
     const dz = point.z - this.position.z;
     this.rotation = new Vector3(dx, 0, dz);
-    const ball = new EntityShinyBall('shinny', this.game);
+    const ball = new EntityShinyBall(`shiny${this.counter++}`, this.game);
+    this.game.spawn(ball);
+
     const forward = this.forward;
     ball.mesh.position = this.position.add(new Vector3(0, 1, 0)).add(forward.multiplyByFloats(2,2,2));
-    ball.velocity = forward.multiplyByFloats(10, 10, 10);
-    console.log(ball.velocity);
+    const speed = 10;
+    ball.velocity = forward.multiplyByFloats(speed, speed, speed);
   }
 
   update(deltaTime: number) {

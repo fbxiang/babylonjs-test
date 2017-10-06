@@ -8,6 +8,10 @@ export interface IEntityMesh { parentEntity?: EntityBase; }
 
 export abstract class EntityBase {
   protected _mesh: Babylon.Mesh & IEntityMesh;
+  _life: number;
+  expirable = true;
+  destroying = false;
+
   get mesh() { return this._mesh; }
   private _forwardMesh: Babylon.Mesh;
   constructor(public name: string, protected game: Game) {
@@ -17,6 +21,12 @@ export abstract class EntityBase {
   }
 
   update(deltaTime: number) {
+    if (this.expirable)
+      this._life -= deltaTime;
+    if (this._life < 0) {
+      this.destroying = true;
+    }
+
     if (Debug.forwardVector) {
       if (!this._forwardMesh) {
         this._forwardMesh = Babylon.Mesh.CreateLines(`${name}_forward`, [Vector3.Zero(), Vector3.Forward()],
@@ -29,12 +39,24 @@ export abstract class EntityBase {
     }
   }
 
+  destroy() {
+    if (this._mesh) {
+      this._mesh.parentEntity = null;
+      if (this._mesh.physicsImpostor) {
+        this._mesh.physicsImpostor.dispose();
+        this._mesh.physicsImpostor = null;
+      }
+      this._mesh.dispose();
+    }
+    this._mesh = null;
+  }
+
   abstract initMesh(): void;
 }
 
 export abstract class EntityPhysics extends EntityBase {
-
   useGravity = true;
+  expirable = false;
 
   get velocity() {
     return this.mesh.physicsImpostor.getLinearVelocity();

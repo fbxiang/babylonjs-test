@@ -6,8 +6,10 @@ import { EntityPhysics, IEntityMesh } from './entity';
 
 export abstract class EntityProjectileBase extends EntityPhysics {
   _particleSystem: Babylon.ParticleSystem;
-  constructor(name: string, game: Game) {
+  constructor(name: string, game: Game, maxLife: number) {
     super(name, game);
+    this._life = maxLife;
+    this.expirable = true;
   }
 
   initMesh() {
@@ -22,17 +24,28 @@ export abstract class EntityProjectileBase extends EntityPhysics {
     this.useGravity = false;
   }
 
+  destroy() {
+    super.destroy();
+    if (this._particleSystem)
+      this._particleSystem.dispose();
+  }
+
+  update(deltaTime: number) {
+    super.update(deltaTime);
+  }
+
   abstract onHit(mesh: Babylon.Mesh & IEntityMesh): void;
 }
 
 export class EntityShinyBall extends EntityProjectileBase {
 
-  constructor(name: string, game: Game) {
-    super(name, game);
+  constructor(name: string, game: Game, maxLife=10) {
+    super(name, game, maxLife);
     const particle = this._particleSystem = new Babylon.ParticleSystem(`particle_${name}`, 100, this.game.scene);
-    particle.particleTexture = new Babylon.Texture(Textures.FLARE, this.game.scene);
-    particle.color1 = new Color4(0.8, 0.7, 0.2, 1.0);
-    particle.color2 = new Color4(1.0, 1.0, 0.2, 1.0);
+    particle.particleTexture = Textures.Get(Textures.FLARE, this.game);
+    particle.color1 = new Color4(0.8, 0.3, 0.1, 1.0);
+    particle.color2 = new Color4(1.0, 0.5, 0.3, 1.0);
+    particle.colorDead = new Color4(0.0, 0.0, 0.1, 0.0);
     particle.emitter = this.mesh;
     particle.minSize = 2.0;
     particle.maxSize = 3.0;
@@ -44,5 +57,13 @@ export class EntityShinyBall extends EntityProjectileBase {
 
   onHit(mesh: Babylon.Mesh & IEntityMesh) {
     console.log(mesh.parentEntity);
+  }
+
+  update(deltaTime: number) {
+    super.update(deltaTime);
+    if (this._life < 3) {
+      this._particleSystem.stop();
+      this.velocity = Vector3.Zero();
+    }
   }
 }
