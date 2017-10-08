@@ -44,9 +44,13 @@ export class EntityPlayer extends EntityLiving{
   }
 
   get forward() {
+    return this.localToGlobal(Vector3.Forward());
+  }
+
+  localToGlobal(v: Vector3) {
     const matrix = Babylon.Matrix.Identity();
     this.mesh.rotationQuaternion.toRotationMatrix(matrix);
-    return Vector3.TransformNormal(Vector3.Forward(), matrix);
+    return Vector3.TransformNormal(v, matrix);
   }
 
   constructor(game: Game) {
@@ -65,13 +69,24 @@ export class EntityPlayer extends EntityLiving{
     const dx = point.x - this.position.x;
     const dz = point.z - this.position.z;
     this.rotation = new Vector3(dx, 0, dz);
-    const ball = new EntityShinyBall(`shiny${this.counter++}`, this.game);
-    this.game.spawn(ball);
+    const ball1 = new EntityShinyBall(`shiny${this.counter++}`, this.game);
+    const ball2 = new EntityShinyBall(`shiny${this.counter++}`, this.game);
+    const ball3 = new EntityShinyBall(`shiny${this.counter++}`, this.game);
+    this.game.spawn(ball1);
+    this.game.spawn(ball2);
+    this.game.spawn(ball3);
 
     const forward = this.forward;
-    ball.mesh.position = this.position.add(new Vector3(0, 1, 0)).add(forward.multiplyByFloats(2,2,2));
+    const lf = new Vector3(-0.3, 0, 1).normalize();
+    const rf = new Vector3(0.3, 0, 1).normalize();
+
+    ball1.mesh.position = this.position.add(new Vector3(0, 1, 0)).add(forward.multiplyByFloats(2,2,2));
+    ball2.mesh.position = this.position.add(new Vector3(0, 1, 0)).add(forward.multiplyByFloats(2,2,2));
+    ball3.mesh.position = this.position.add(new Vector3(0, 1, 0)).add(forward.multiplyByFloats(2,2,2));
     const speed = 10;
-    ball.velocity = forward.multiplyByFloats(speed, speed, speed);
+    ball1.velocity = forward.multiplyByFloats(speed, speed, speed);
+    ball2.velocity = this.localToGlobal(lf).multiplyByFloats(speed, speed, speed);
+    ball3.velocity = this.localToGlobal(rf).multiplyByFloats(speed, speed, speed);
   }
 
   update(deltaTime: number) {
@@ -137,7 +152,7 @@ export class EntityPlayer extends EntityLiving{
       body.fixedRotation = true;
       body.updateMassProperties();
       body.addEventListener('collide', e => {
-        if (e.contact.ri.y < 0) {
+        if (e.contact.ni.y > 0) {
           this.grounded = true;
         }
       })

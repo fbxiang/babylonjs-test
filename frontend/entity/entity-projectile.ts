@@ -13,8 +13,8 @@ export abstract class EntityProjectileBase extends EntityPhysics {
   }
 
   initMesh() {
-    // this._mesh = new Babylon.Mesh('mesh_' + this.name, this.game.scene);
     this._mesh = Babylon.Mesh.CreateSphere(`mesh_${this.name}`, 10, 1, this.game.scene, true);
+    this._mesh.isVisible = false;
   }
 
   initPhysics() {
@@ -62,8 +62,8 @@ export class EntityShinyBall extends EntityProjectileBase {
   }
 
   onHit(mesh: Babylon.Mesh & IEntityMesh) {
-    this.destroying = true;
     if (mesh.parentEntity instanceof EntityLiving) {
+      this.destroying = true;
       mesh.parentEntity.damage(20);
     }
   }
