@@ -1,4 +1,5 @@
 import * as Babylon from 'babylonjs';
+import * as Random from 'random-js';
 
 const permutation = [151, 160, 137, 91, 90, 15,
   131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23,
@@ -14,8 +15,16 @@ const permutation = [151, 160, 137, 91, 90, 15,
   49, 192, 214, 31, 181, 199, 106, 157, 184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254,
   138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180]
 
+
+let seed = 42;
+
+export function setSeed(seed) {
+  seed = seed;
+}
+
 function hash1(x, y) {
-  return x * 101 + y * 97 + 2 + 173;
+  const r = new Random(Random.engines.mt19937().seedWithArray([x, y, seed]));
+  return r.integer(0, 255);
 }
 
 function grad(x: number, y: number) {
@@ -31,12 +40,13 @@ function lerp(p1: number, p2: number, w: number) {
   return (1 - w) * p1 + w * p2;
 }
 
-function dotGradient(xi: number, yi: number, x: number, y: number, gradient: (x: number, y: number) => number[]) {
-  const g = gradient(xi, yi);
+function dotGradient(xi: number, yi: number, x: number, y: number) {
+  const g = grad(xi, yi);
   return (x - xi) * g[0] + (y - yi) * g[1];
 }
 
-export function perlin(x: number, y: number, gradient=grad, freq=1, amp = 1) {
+export function perlin(x: number, y: number, seed: number, freq=1, amp=1) {
+  setSeed(seed);
   x *= freq;
   y *= freq;
   const x0 = Math.floor(x);
@@ -47,15 +57,22 @@ export function perlin(x: number, y: number, gradient=grad, freq=1, amp = 1) {
   const dx = x - x0;
   const dy = y - y0;
 
-  const g1 = dotGradient(x0, y0, x, y, gradient);
-  const g2 = dotGradient(x1, y0, x, y, gradient);
-  const g3 = dotGradient(x0, y1, x, y, gradient);
-  const g4 = dotGradient(x1, y1, x, y, gradient);
+  const g1 = dotGradient(x0, y0, x, y);
+  const g2 = dotGradient(x1, y0, x, y);
+  const g3 = dotGradient(x0, y1, x, y);
+  const g4 = dotGradient(x1, y1, x, y);
   return amp * lerp(lerp(g1, g2, dx), lerp(g3, g4, dx), dy);
 }
 
+export function mixedPerlin(x: number, y: number, freqs=[0.03], amps=[15], xShifts=[0], yShifts=[-0], seeds=[42]) {
+  let sum = 0;
+  for (let i = 0; i < freqs.length; i++) {
+    sum += perlin(x + xShifts[i], y + yShifts[i], seeds[i], freqs[i], amps[i]);
+  }
+  return sum;
+}
 
-export function createGround (name, width, height, w_subdivisions, h_subdivisions, scene, updatable) {
+export function createGround (name, width, height, w_subdivisions, h_subdivisions, scene, updatable, seed=42) {
   let ground = new Babylon.Mesh(name, scene);
   let positions = [];
   let normals = [];
@@ -67,7 +84,14 @@ export function createGround (name, width, height, w_subdivisions, h_subdivision
     for (col = 0; col <= w_subdivisions; col++) {
       const x = col * width / w_subdivisions - width / 2.0;
       const z = row * height / h_subdivisions - height / 2.0;
-      const y = perlin(x, z, grad, 0.03, 15);
+      const y = mixedPerlin(
+        x, z,
+        [0.005, 0.03, 0.06],
+        [40, 5, 2],
+        [0, 5, -5],
+        [0.2, 7, -9],
+        [42, 24, 420]
+      );
 
       const u = x / 50;
       const v = z / 50;

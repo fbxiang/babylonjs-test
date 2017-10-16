@@ -77,7 +77,7 @@ export class Game {
   }
 
   private initLevel() {
-    const ground = createGround('ground', 400, 400, 40, 40, this.scene, true);
+    const ground = createGround('ground', 1000, 1000, 100, 100, this.scene, true);
     ground.receiveShadows = true;
     const texture = Textures.Get(Textures.BEACH, this);
     const material = new Babylon.StandardMaterial('material_ground', this.scene);
