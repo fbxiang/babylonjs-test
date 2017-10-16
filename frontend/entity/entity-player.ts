@@ -140,6 +140,7 @@ export class EntityPlayer extends EntityLiving {
     targetParticleSystem.direction1 = new Vector3(-2, 16, 2);
     targetParticleSystem.direction2 = new Vector3(2, 16, -2);
     this._targetParticle = targetParticleSystem;
+    this.game._shadow.getShadowMap().renderList.push(this._mesh);
   }
 
   initPhysics() {

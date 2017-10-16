@@ -18,7 +18,8 @@ export class Game {
   _engine: Babylon.Engine;
   _scene: Babylon.Scene;
   _camera: Babylon.ArcRotateCamera;
-  _light: Babylon.Light;
+  _light: Babylon.IShadowLight;
+  _shadow: Babylon.ShadowGenerator;
   _player: EntityPlayer;
   _key = {};
   _entities: Set<EntityBase> = new Set();
@@ -38,7 +39,7 @@ export class Game {
     }
     this._engine = new Babylon.Engine(this._canvas, true);
     this.initScene();
-    this._light = new Babylon.DirectionalLight('light_main', new Vector3(1, -1, 0), this._scene);
+    this.initLight();
     this.initCamera();
     this.initInputs();
     this.initSkybox();
@@ -54,6 +55,18 @@ export class Game {
     this._scene.enablePhysics(gravity, new Babylon.CannonJSPlugin());
   }
 
+  private initLight() {
+    this._light = new Babylon.DirectionalLight('light_main', new Vector3(-1, -2, -1), this._scene);
+    this._light.position = new Vector3(100, 200, 100);
+    this._shadow = new Babylon.ShadowGenerator(1024, this._light);
+    this._shadow.getShadowMap().refreshRate = 1;
+    this._shadow.setTransparencyShadow(true);
+    this._shadow.useBlurVarianceShadowMap = true;
+    this._shadow.blurBoxOffset = 1.0;
+    this._shadow.blurScale = 1.0;
+    this._shadow.bias = 0.01;
+  }
+
   private initCamera() {
     const camera = this._camera = new Babylon.ArcRotateCamera('camera_main', 0, 0, 10, Babylon.Vector3.Zero(), this._scene);
     camera.setPosition(new Vector3(8, 16, 0));
@@ -64,13 +77,13 @@ export class Game {
   }
 
   private initLevel() {
-    const ground = createGround('ground', 4000, 4000, 400, 400, this.scene, true);
+    const ground = createGround('ground', 400, 400, 40, 40, this.scene, true);
+    ground.receiveShadows = true;
     const texture = Textures.Get(Textures.BEACH, this);
     const material = new Babylon.StandardMaterial('material_ground', this.scene);
     material.specularColor = Babylon.Color3.Black();
     material.diffuseTexture = texture;
     ground.material = material;
-    // ground.convertToFlatShadedMesh();
     ground.physicsImpostor = new Babylon.PhysicsImpostor(ground, Babylon.PhysicsImpostor.HeightmapImpostor, {
       mass: 0, restitution: 0
     }, this._scene);
