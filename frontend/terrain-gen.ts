@@ -68,7 +68,11 @@ export function createGround (name, width, height, w_subdivisions, h_subdivision
       const x = col * width / w_subdivisions - width / 2.0;
       const z = row * height / h_subdivisions - height / 2.0;
       const y = perlin(x, z, grad, 0.03, 15);
+
+      const u = x / 50;
+      const v = z / 50;
       positions.push(x, y, z);
+      uvs.push(u, v);
     }
   }
 
@@ -91,5 +95,6 @@ export function createGround (name, width, height, w_subdivisions, h_subdivision
   vertexData.indices = indices;
   vertexData.normals = normals;
   vertexData.applyToMesh(ground);
+  ground.setVerticesData(Babylon.VertexBuffer.UVKind, uvs);
   return ground;
 };

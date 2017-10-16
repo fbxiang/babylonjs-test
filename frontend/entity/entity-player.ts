@@ -150,7 +150,6 @@ export class EntityPlayer extends EntityLiving {
       body.fixedRotation = true;
       body.updateMassProperties();
       body.addEventListener('collide', e => {
-        console.log(e.contact);
         if (e.contact.ri.y < 0) {
           this.grounded = true;
         }

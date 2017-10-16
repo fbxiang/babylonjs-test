@@ -8,6 +8,8 @@ import { EntityBase } from './entity/entity';
 import { EntityDebug } from './entity/entity-debug';
 
 import { createGround } from './terrain-gen';
+import 'babylonjs-materials';
+import 'babylonjs-procedural-textures';
 
 Debug.forwardVector = true;
 
@@ -63,14 +65,12 @@ export class Game {
 
   private initLevel() {
     const ground = createGround('ground', 4000, 4000, 400, 400, this.scene, true);
-    ground.material = new Babylon.StandardMaterial('material_ground', this.scene);
-    ground.material.alpha = 1;
-
-    // ground.physicsImpostor = new Babylon.PhysicsImpostor(ground, Babylon.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, this._scene);
-    // TODO integrate heightmap imposter
-    this.scene.collisionsEnabled = true;
-    // ground.material.wireframe = true;
-
+    const texture = Textures.Get(Textures.BEACH, this);
+    const material = new Babylon.StandardMaterial('material_ground', this.scene);
+    material.specularColor = Babylon.Color3.Black();
+    material.diffuseTexture = texture;
+    ground.material = material;
+    // ground.convertToFlatShadedMesh();
     ground.physicsImpostor = new Babylon.PhysicsImpostor(ground, Babylon.PhysicsImpostor.HeightmapImpostor, {
       mass: 0, restitution: 0
     }, this._scene);
