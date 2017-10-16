@@ -68,8 +68,7 @@ export function createGround (name, width, height, w_subdivisions, h_subdivision
       const x = col * width / w_subdivisions - width / 2.0;
       const z = row * height / h_subdivisions - height / 2.0;
       const y = perlin(x, z, grad, 0.03, 15);
-      positions.push(x, y - 10, z);
-      normals.push(0, 1, 0);
+      positions.push(x, y, z);
     }
   }
 
@@ -85,6 +84,7 @@ export function createGround (name, width, height, w_subdivisions, h_subdivision
     }
   }
 
+  Babylon.VertexData.ComputeNormals(positions, indices, normals);
 
   let vertexData = new Babylon.VertexData();
   vertexData.positions = positions;

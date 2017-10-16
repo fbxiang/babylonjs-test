@@ -62,14 +62,18 @@ export class Game {
   }
 
   private initLevel() {
-    const ground = createGround('ground', 800, 400, 80, 40, this.scene, true);
+    const ground = createGround('ground', 4000, 4000, 400, 400, this.scene, true);
     ground.material = new Babylon.StandardMaterial('material_ground', this.scene);
-    ground.material.alpha = 0.5;
-    ground.physicsImpostor = new Babylon.PhysicsImpostor(ground, Babylon.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, this._scene);
+    ground.material.alpha = 1;
+
+    // ground.physicsImpostor = new Babylon.PhysicsImpostor(ground, Babylon.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, this._scene);
     // TODO integrate heightmap imposter
     this.scene.collisionsEnabled = true;
-    // ground.physicsImpostor = new Babylon.PhysicsImpostor(ground, Babylon.PhysicsImpostor.MeshImpostor, {mass: 0, restitution: 0.9}, this._scene);
-    ground.material.wireframe = true;
+    // ground.material.wireframe = true;
+
+    ground.physicsImpostor = new Babylon.PhysicsImpostor(ground, Babylon.PhysicsImpostor.HeightmapImpostor, {
+      mass: 0, restitution: 0
+    }, this._scene);
 
     const targetEntity = new EntityDebug('debug1', this);
     this.spawn(targetEntity);

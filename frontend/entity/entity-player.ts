@@ -106,13 +106,11 @@ export class EntityPlayer extends EntityLiving {
         this.target = null;
       }
     }
-    if (this.velocity.y >= 1) {
-      this.grounded = false;
-    }
 
     if (this.game.Input.keydown(' ') && this.grounded) {
       this.velocity = this.velocity.multiplyByFloats(1, 0, 1);
-      this.mesh.physicsImpostor.applyImpulse(new Vector3(0, 10, 0), Vector3.Zero());
+      this.mesh.physicsImpostor.applyImpulse(new Vector3(0, 15, 0), Vector3.Zero());
+      this.grounded = false;
     }
   }
 
@@ -146,13 +144,14 @@ export class EntityPlayer extends EntityLiving {
 
   initPhysics() {
     this.mesh.physicsImpostor = new Babylon.PhysicsImpostor(this.mesh, Babylon.PhysicsImpostor.BoxImpostor, {
-      mass: 1, restitution: 0.01, friction: 0
+      mass: 1, restitution: 0, friction: 0.1
     }, this.game.scene);
     this.mesh.physicsImpostor.executeNativeFunction((world, body) => {
       body.fixedRotation = true;
       body.updateMassProperties();
       body.addEventListener('collide', e => {
-        if (e.contact.ni.y > 0) {
+        console.log(e.contact);
+        if (e.contact.ri.y < 0) {
           this.grounded = true;
         }
       })
