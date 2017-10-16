@@ -3,7 +3,9 @@ import { Game } from './game';
 
 export class Textures {
   static SKYBOX = 'assets/textures/skybox/miramar';
-  static FLARE = 'assets/textures/flare.png';
+  static FLARE = 'https://d33wubrfki0l68.cloudfront.net/2e1f167031edb2d710f5af42e795afe3203fb2bc/aee48/img/tutorials/particles/flare.png';
+  static SMOKE = 'https://commons.wikimedia.org/wiki/File:Blender3D_CuttingThroughSteel_Smoke.jpg';
+  static LASER = 'https://i.stack.imgur.com/3YvXH.png';
 
   static Get(url: string, game: Game): Babylon.Texture {
       return new Babylon.Texture(url, game.scene);

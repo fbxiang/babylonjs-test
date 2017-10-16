@@ -4,7 +4,10 @@ import { Debug } from './debug';
 import * as _ from 'lodash';
 import { Textures } from './resources';
 import { EntityPlayer } from './entity/entity-player';
-import { EntityBase, EntityDebug } from './entity/entity';
+import { EntityBase } from './entity/entity';
+import { EntityDebug } from './entity/entity-debug';
+
+import { createGround } from './terrain-gen';
 
 Debug.forwardVector = true;
 
@@ -59,10 +62,14 @@ export class Game {
   }
 
   private initLevel() {
-    const ground = Babylon.Mesh.CreateGround('ground', 100, 20, 2, this.scene);
+    const ground = createGround('ground', 800, 400, 80, 40, this.scene, true);
     ground.material = new Babylon.StandardMaterial('material_ground', this.scene);
     ground.material.alpha = 0.5;
     ground.physicsImpostor = new Babylon.PhysicsImpostor(ground, Babylon.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, this._scene);
+    // TODO integrate heightmap imposter
+    this.scene.collisionsEnabled = true;
+    // ground.physicsImpostor = new Babylon.PhysicsImpostor(ground, Babylon.PhysicsImpostor.MeshImpostor, {mass: 0, restitution: 0.9}, this._scene);
+    ground.material.wireframe = true;
 
     const targetEntity = new EntityDebug('debug1', this);
     this.spawn(targetEntity);
@@ -86,29 +93,29 @@ export class Game {
     this._canvas.addEventListener('mousedown', e => {
       const pickResult = this.scene.pick(e.x, e.y);
       switch (e.button) {
-      case 0:
-        this.keydown['mouseLeft'] = true;
-        if (pickResult.hit) {
-          this.player.move(pickResult.pickedPoint, pickResult.pickedMesh);
-        }
-        return;
-      case 2:
-        this.keydown['mouseRight'] = true;
-        if (pickResult.hit) {
-          this.player.activate(pickResult.pickedPoint, pickResult.pickedMesh);
-        }
-        return;
+        case 0:
+          this.keydown['mouseLeft'] = true;
+          if (pickResult.hit) {
+            this.player.move(pickResult.pickedPoint, pickResult.pickedMesh);
+          }
+          return;
+        case 2:
+          this.keydown['mouseRight'] = true;
+          if (pickResult.hit) {
+            this.player.activate(pickResult.pickedPoint, pickResult.pickedMesh);
+          }
+          return;
       }
     })
 
     this._canvas.addEventListener('mouseup', e => {
       switch (e.button) {
-      case 0:
-        this.keydown['mouseLeft'] = false;
-        return;
-      case 2:
-        this.keydown['mouseRight'] = false;
-        return;
+        case 0:
+          this.keydown['mouseLeft'] = false;
+          return;
+        case 2:
+          this.keydown['mouseRight'] = false;
+          return;
       }
     })
 

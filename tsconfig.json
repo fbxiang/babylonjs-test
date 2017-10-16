@@ -8,6 +8,7 @@
   },
   "types": [
     "babylonjs",
+    "babylonjs-materials",
     "cannon"
   ]
 }

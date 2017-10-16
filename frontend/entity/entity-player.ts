@@ -2,10 +2,10 @@ import { Textures } from '../resources';
 import { Game } from '../game';
 import { Vector3, Color4, Quaternion } from 'babylonjs';
 import * as Babylon from 'babylonjs';
-import { EntityPhysics, EntityLiving } from './entity';
+import { EntityLiving } from './entity-living';
 import { EntityShinyBall } from './entity-projectile';
 
-export class EntityPlayer extends EntityLiving{
+export class EntityPlayer extends EntityLiving {
   _targetMesh: Babylon.Mesh;
   _targetParticle: Babylon.ParticleSystem;
   grounded = true;
@@ -27,16 +27,16 @@ export class EntityPlayer extends EntityLiving{
   set position(p: Vector3) { this._mesh.position = p; }
 
   set rotation(v: Vector3) {
-    const {x, y, z} = v;
+    const { x, y, z } = v;
     if (x == 0 && y == 0 && z == 0) return;
     let yaw, pitch, roll = 0;
     if (x == 0 && z == 0) {
       yaw = 0;
       pitch = y > 0 ? Math.PI : -Math.PI;
     } else {
-      yaw = z > 0 ? Math.atan(x/z) : Math.atan(x/z) + Math.PI;
-      const xz = Math.sqrt(x*x + z*z);
-      pitch = Math.atan(y/xz);
+      yaw = z > 0 ? Math.atan(x / z) : Math.atan(x / z) + Math.PI;
+      const xz = Math.sqrt(x * x + z * z);
+      pitch = Math.atan(y / xz);
     }
     this.mesh.rotationQuaternion = Quaternion.FromRotationMatrix(
       Babylon.Matrix.RotationYawPitchRoll(yaw, pitch, roll)
@@ -58,7 +58,7 @@ export class EntityPlayer extends EntityLiving{
     this.initTargetMesh();
   }
 
-  move(point: Vector3, mesh: Babylon.AbstractMesh, firstClick=true) {
+  move(point: Vector3, mesh: Babylon.AbstractMesh, firstClick = true) {
     if (point) {
       this.target = point;
     }
@@ -80,9 +80,9 @@ export class EntityPlayer extends EntityLiving{
     const lf = new Vector3(-0.3, 0, 1).normalize();
     const rf = new Vector3(0.3, 0, 1).normalize();
 
-    ball1.mesh.position = this.position.add(new Vector3(0, 1, 0)).add(forward.multiplyByFloats(2,2,2));
-    ball2.mesh.position = this.position.add(new Vector3(0, 1, 0)).add(forward.multiplyByFloats(2,2,2));
-    ball3.mesh.position = this.position.add(new Vector3(0, 1, 0)).add(forward.multiplyByFloats(2,2,2));
+    ball1.mesh.position = this.position.add(new Vector3(0, 1, 0)).add(forward.multiplyByFloats(2, 2, 2));
+    ball2.mesh.position = this.position.add(new Vector3(0, 1, 0)).add(forward.multiplyByFloats(2, 2, 2));
+    ball3.mesh.position = this.position.add(new Vector3(0, 1, 0)).add(forward.multiplyByFloats(2, 2, 2));
     const speed = 10;
     ball1.velocity = forward.multiplyByFloats(speed, speed, speed);
     ball2.velocity = this.localToGlobal(lf).multiplyByFloats(speed, speed, speed);

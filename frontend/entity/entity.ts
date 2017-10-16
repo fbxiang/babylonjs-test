@@ -4,10 +4,10 @@ import { Game } from '../game';
 import { Debug } from '../debug';
 import { Textures } from '../resources';
 
-export interface IEntityMesh { parentEntity?: EntityBase; }
+export interface IEntityProperty { parentEntity?: EntityBase; }
 
 export abstract class EntityBase {
-  protected _mesh: Babylon.Mesh & IEntityMesh;
+  protected _mesh: Babylon.Mesh & IEntityProperty;
   _life: number;
   expirable = true;
   destroying = false;
@@ -65,70 +65,3 @@ export abstract class EntityBase {
   abstract initMesh(): void;
 }
 
-export abstract class EntityPhysics extends EntityBase {
-  useGravity = true;
-  expirable = false;
-
-  get velocity() {
-    return this.mesh.physicsImpostor.getLinearVelocity();
-  }
-  set velocity(v: Vector3) {
-    this.mesh.physicsImpostor.setLinearVelocity(v);
-  }
-
-  constructor(name: string, game: Game) {
-    super(name, game);
-    this.initPhysics();
-    if (this.mesh.physicsImpostor && !this.useGravity) {
-      this.mesh.physicsImpostor.registerBeforePhysicsStep(imposter => {
-        imposter.executeNativeFunction((world, body) => {
-          body.force.y += 9.81; // TODO: change this trick
-        })
-      })
-    }
-  }
-  abstract initPhysics(): void;
-}
-
-
-export abstract class EntityLiving extends EntityPhysics {
-  maxHealth = 100;
-  health = 100;
-  immortal = false;
-  constructor(name, game) {
-    super(name, game);
-    this.expirable = false;
-  }
-
-  damage(d: number) {
-    this.health -= d;
-    if (this.health <= 0)
-      this.onDeath();
-  }
-
-  heal(d=Infinity) {
-    this.health = Math.min(this.health + d, this.maxHealth);
-  }
-
-  abstract onDeath();
-}
-
-
-export class EntityDebug extends EntityLiving{
-  constructor(name, game) {
-    super(name, game);
-    this.expirable = false;
-  }
-
-  initMesh() {
-    this._mesh = Babylon.Mesh.CreateBox(`mesh_${this.name}`, 3, this.game.scene, true);
-  }
-
-  initPhysics() {
-    this.mesh.physicsImpostor = new Babylon.PhysicsImpostor(this.mesh, Babylon.PhysicsImpostor.BoxImpostor);
-  }
-
-  onDeath() {
-    this.destroying = true;
-  }
-}
