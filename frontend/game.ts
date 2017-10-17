@@ -17,17 +17,20 @@ export class Game {
   _canvas: HTMLCanvasElement;
   _engine: Babylon.Engine;
   _scene: Babylon.Scene;
-  _camera: Babylon.ArcRotateCamera;
+  _camera3rd: Babylon.ArcRotateCamera;
+  _camera1st: Babylon.Camera;
+  _cameraPoint: Babylon.Mesh;
   _light: Babylon.IShadowLight;
   _shadow: Babylon.ShadowGenerator;
   _player: EntityPlayer;
-  _key = {};
+  _keydown = {};
+  keypress = {};
   _entities: Set<EntityBase> = new Set();
 
-  get keydown() { return this._key; }
+  get keydown() { return this._keydown; }
   get scene() { return this._scene; }
   get engine() { return this._engine; }
-  get camera() { return this._camera; }
+  get camera() { return this._camera3rd; }
   get light() { return this._light; }
   get player() { return this._player; }
 
@@ -40,13 +43,13 @@ export class Game {
     this._engine = new Babylon.Engine(this._canvas, true);
     this.initScene();
     this.initLight();
+    this._player = new EntityPlayer(this);
+    this.spawn(this._player);
     this.initCamera();
     this.initInputs();
     this.initSkybox();
     this.initLevel();
     window.addEventListener('resize', () => this.engine.resize());
-    this._player = new EntityPlayer(this);
-    this.spawn(this._player);
   }
 
   private initScene() {
@@ -68,16 +71,26 @@ export class Game {
   }
 
   private initCamera() {
-    const camera = this._camera = new Babylon.ArcRotateCamera('camera_main', 0, 0, 10, Babylon.Vector3.Zero(), this._scene);
-    camera.setPosition(new Vector3(8, 16, 0));
-    this._camera.attachControl(this._canvas);
-    this._camera.panningSensibility = 0;
+    this._camera3rd = new Babylon.ArcRotateCamera('camera_3rd', 0, 0, 10, Babylon.Vector3.Zero(), this._scene);
+    this._camera3rd.setPosition(new Vector3(8, 16, 0));
+    this._camera3rd.attachControl(this._canvas);
+    this._camera3rd.panningSensibility = 0;
     const mouse = <Babylon.ArcRotateCameraPointersInput>this.camera.inputs.attached.pointers;
     mouse.buttons = [1];
+
+    this._camera1st = new Babylon.Camera('camera_1st', new Vector3(0, 0, 0), this.scene);
+    this._camera1st.parent = this.player.mesh;
+
+    const cameraAttachPoint = new Babylon.Mesh('camera_point', this.scene);
+    cameraAttachPoint.parent = this.player.mesh;
+    cameraAttachPoint.position.y += 1;
+    this._cameraPoint = cameraAttachPoint;
+    this._cameraPoint.rotationQuaternion = new Babylon.Quaternion(0, 0, 0, 1);
+    this._camera1st.parent = cameraAttachPoint;
   }
 
   private initLevel() {
-    const ground = createGround('ground', 1000, 1000, 100, 100, this.scene, true);
+    const ground = createGround('ground', 400, 400, 40, 40, this.scene, true);
     ground.receiveShadows = true;
     const texture = Textures.Get(Textures.BEACH, this);
     const material = new Babylon.StandardMaterial('material_ground', this.scene);
@@ -96,11 +109,12 @@ export class Game {
   private initInputs() {
     const actionManager = this._scene.actionManager = new Babylon.ActionManager(this._scene);
     actionManager.registerAction(new Babylon.ExecuteCodeAction(Babylon.ActionManager.OnKeyDownTrigger, e => {
-      this._key[e.sourceEvent.key] = e.sourceEvent.type == 'keydown';
+      this._keydown[e.sourceEvent.key] = e.sourceEvent.type == 'keydown';
+      this.keypress[e.sourceEvent.key] = e.sourceEvent.type == 'keydown';
     }));
 
     actionManager.registerAction(new Babylon.ExecuteCodeAction(Babylon.ActionManager.OnKeyUpTrigger, e => {
-      this._key[e.sourceEvent.key] = e.sourceEvent.type == 'keydown';
+      this._keydown[e.sourceEvent.key] = e.sourceEvent.type == 'keydown';
     }));
 
     this._canvas.addEventListener('contextmenu', e => {
@@ -139,6 +153,8 @@ export class Game {
     this._canvas.addEventListener('mousemove', e => {
       this.Input.mouse.x = e.x;
       this.Input.mouse.y = e.y;
+      this.Input.mouse.dx += e.movementX;
+      this.Input.mouse.dy += e.movementY;
     })
   }
 
@@ -159,7 +175,11 @@ export class Game {
     keydown: (key: string) => {
       return this.keydown[key];
     },
-    mouse: { x: -1, y: -1 }
+    keypress: (key: string) => {
+      const value = this.keypress[key];
+      return value;
+    },
+    mouse: { x: -1, y: -1, dx: 0, dy: 0 }
   }
 
   spawn(entity: EntityBase) {
@@ -192,6 +212,9 @@ export class Game {
       entity.destroy()
       this._entities.delete(entity);
     })
+    this.Input.mouse.dx = 0;
+    this.Input.mouse.dy = 0;
+    this.keypress = {};
   }
 
   start() {
