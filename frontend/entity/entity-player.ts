@@ -175,8 +175,9 @@ export class EntityPlayer extends EntityLiving {
   }
 
   initMesh() {
-    this._mesh = Babylon.Mesh.CreateCylinder('mesh_player', 1, 1, 1, 0, 0, this.game.scene);
-    this._mesh.scaling = new Vector3(1, 2, 1);
+    this._mesh = Babylon.Mesh.CreateCylinder('mesh_player', 2, 1, 1, 6, 6, this.game.scene);
+    this._mesh.convertToFlatShadedMesh();
+    this._mesh.scaling = new Vector3(1, 1, 1);
     this._mesh.position.y = 5;
     this._mesh.isPickable = false;
 
