@@ -9,6 +9,10 @@ import * as _ from 'lodash';
 export class EntityPlayer extends EntityLiving {
   _targetMesh: Babylon.Mesh;
   _targetParticle: Babylon.ParticleSystem;
+  _camera3rd: Babylon.ArcRotateCamera;
+  _camera1st: Babylon.Camera;
+  _cameraPoint: Babylon.Mesh;
+
   grounded = true;
   speed = 4;
   _target: Vector3;
@@ -23,7 +27,7 @@ export class EntityPlayer extends EntityLiving {
       this._targetParticle.stop();
     }
   }
-  get camera1st() { return this.game._camera1st; }
+
   get target() { return this._target; }
   get position() { return this._mesh.position; }
   set position(p: Vector3) { this._mesh.position = p; }
@@ -46,11 +50,11 @@ export class EntityPlayer extends EntityLiving {
   }
 
   get firstPerson() {
-    return this.game._camera1st == this.game.scene.activeCamera;
+    return this._camera1st == this.game.scene.activeCamera;
   }
 
   set firstPerson(first: boolean) {
-    this.game.scene.activeCamera = first ? this.game._camera1st : this.game._camera3rd;
+    this.game.scene.activeCamera = first ? this._camera1st : this._camera3rd;
   }
 
   get forward() {
@@ -70,6 +74,7 @@ export class EntityPlayer extends EntityLiving {
   constructor(game: Game) {
     super('player', game);
     this.initTargetMesh();
+    this.initCamera();
   }
 
   move(point: Vector3, mesh: Babylon.AbstractMesh, firstClick = true) {
@@ -104,6 +109,9 @@ export class EntityPlayer extends EntityLiving {
   }
 
   update(deltaTime: number) {
+    this._camera3rd.target = this.position;
+    this._camera3rd.radius = _.clamp(this._camera3rd.radius, 10, 100);
+
     super.update(deltaTime);
     if (this.firstPerson) {
       this.target = null;
@@ -151,12 +159,12 @@ export class EntityPlayer extends EntityLiving {
       this.mesh.rotate(Vector3.Up(), this.game.Input.mouse.dx / 200);
       const rotation = Quaternion.Zero();
       // this.game._cameraPoint.getWorldMatrix().decompose(Vector3.Zero(), rotation, Vector3.Zero());
-      const pitch = -this.game._cameraPoint.rotationQuaternion.toEulerAngles().x;
+      const pitch = -this._cameraPoint.rotationQuaternion.toEulerAngles().x;
       let dp = -this.game.Input.mouse.dy / 200;
       let np = _.clamp(pitch + dp, -Math.PI / 2.1, Math.PI / 2.1);
       dp = np - pitch
 
-      this.game._cameraPoint.rotate(Vector3.Left(), dp);
+      this._cameraPoint.rotate(Vector3.Left(), dp);
     }
 
     if (this.game.Input.keydown(' ') && this.grounded) {
@@ -193,6 +201,24 @@ export class EntityPlayer extends EntityLiving {
     targetParticleSystem.direction2 = new Vector3(2, 16, -2);
     this._targetParticle = targetParticleSystem;
     this.game._shadow.getShadowMap().renderList.push(this._mesh);
+  }
+
+  initCamera() {
+    this._camera3rd = new Babylon.ArcRotateCamera('camera_3rd', 0, 0, 10, Babylon.Vector3.Zero(), this.game.scene);
+    this._camera3rd.setPosition(new Vector3(8, 16, 0));
+    this._camera3rd.attachControl(this.game._canvas);
+    this._camera3rd.panningSensibility = 0;
+    const mouse = <Babylon.ArcRotateCameraPointersInput>this._camera3rd.inputs.attached.pointers;
+    mouse.buttons = [1];
+
+    this._camera1st = new Babylon.Camera('camera_1st', new Vector3(0, 0, 0), this.game.scene);
+    this._camera1st.parent = this.mesh;
+
+    this._cameraPoint = new Babylon.Mesh('camera_point', this.game.scene);
+    this._cameraPoint.parent = this.mesh;
+    this._cameraPoint.position.y += 1;
+    this._cameraPoint.rotationQuaternion = new Babylon.Quaternion(0, 0, 0, 1);
+    this._camera1st.parent = this._cameraPoint;
   }
 
   initPhysics() {

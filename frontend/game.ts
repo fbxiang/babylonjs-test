@@ -17,9 +17,6 @@ export class Game {
   _canvas: HTMLCanvasElement;
   _engine: Babylon.Engine;
   _scene: Babylon.Scene;
-  _camera3rd: Babylon.ArcRotateCamera;
-  _camera1st: Babylon.Camera;
-  _cameraPoint: Babylon.Mesh;
   _light: Babylon.IShadowLight;
   _shadow: Babylon.ShadowGenerator;
   _player: EntityPlayer;
@@ -30,7 +27,6 @@ export class Game {
   get keydown() { return this._keydown; }
   get scene() { return this._scene; }
   get engine() { return this._engine; }
-  get camera() { return this._camera3rd; }
   get light() { return this._light; }
   get player() { return this._player; }
 
@@ -71,22 +67,22 @@ export class Game {
   }
 
   private initCamera() {
-    this._camera3rd = new Babylon.ArcRotateCamera('camera_3rd', 0, 0, 10, Babylon.Vector3.Zero(), this._scene);
-    this._camera3rd.setPosition(new Vector3(8, 16, 0));
-    this._camera3rd.attachControl(this._canvas);
-    this._camera3rd.panningSensibility = 0;
-    const mouse = <Babylon.ArcRotateCameraPointersInput>this.camera.inputs.attached.pointers;
-    mouse.buttons = [1];
+    // this._camera3rd = new Babylon.ArcRotateCamera('camera_3rd', 0, 0, 10, Babylon.Vector3.Zero(), this._scene);
+    // this._camera3rd.setPosition(new Vector3(8, 16, 0));
+    // this._camera3rd.attachControl(this._canvas);
+    // this._camera3rd.panningSensibility = 0;
+    // const mouse = <Babylon.ArcRotateCameraPointersInput>this.camera.inputs.attached.pointers;
+    // mouse.buttons = [1];
 
-    this._camera1st = new Babylon.Camera('camera_1st', new Vector3(0, 0, 0), this.scene);
-    this._camera1st.parent = this.player.mesh;
+    // this._camera1st = new Babylon.Camera('camera_1st', new Vector3(0, 0, 0), this.scene);
+    // this._camera1st.parent = this.player.mesh;
 
-    const cameraAttachPoint = new Babylon.Mesh('camera_point', this.scene);
-    cameraAttachPoint.parent = this.player.mesh;
-    cameraAttachPoint.position.y += 1;
-    this._cameraPoint = cameraAttachPoint;
-    this._cameraPoint.rotationQuaternion = new Babylon.Quaternion(0, 0, 0, 1);
-    this._camera1st.parent = cameraAttachPoint;
+    // const cameraAttachPoint = new Babylon.Mesh('camera_point', this.scene);
+    // cameraAttachPoint.parent = this.player.mesh;
+    // cameraAttachPoint.position.y += 1;
+    // this._cameraPoint = cameraAttachPoint;
+    // this._cameraPoint.rotationQuaternion = new Babylon.Quaternion(0, 0, 0, 1);
+    // this._camera1st.parent = cameraAttachPoint;
   }
 
   private initLevel() {
@@ -196,9 +192,6 @@ export class Game {
       }
     }
 
-    this.camera.target = this.player.position;
-    this.camera.radius = _.clamp(this.camera.radius, 10, 100);
-    this.camera.radius
     const deltaTime = this.scene.getLastFrameDuration() / 100;
 
     const destroyList: EntityBase[] = [];
@@ -221,4 +214,3 @@ export class Game {
     this.engine.runRenderLoop(() => this.render());
   }
 }
-
