@@ -85,7 +85,7 @@ export class Game {
     targetEntity.position = new Vector3(-6, 2, 0);
 
     // tree.makeBasicTree('tree', 10, this.scene);
-    tree.makeSingleGrass('grass', 4, this.scene);
+    tree.makeGrass('grass', 8, 100, this.scene);
   }
 
   private initInputs() {
