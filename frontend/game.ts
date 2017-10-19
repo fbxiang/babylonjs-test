@@ -10,6 +10,9 @@ import { EntityDebug } from './entity/entity-debug';
 import { createGround } from './terrain-gen';
 import 'babylonjs-materials';
 import 'babylonjs-procedural-textures';
+import { simplePineGenerator } from './extensions/tree-generators/pine';
+
+import { createTree } from './extensions/tree-generators/sps';
 
 import * as tree from './tree-gen';
 
@@ -84,8 +87,10 @@ export class Game {
     this.spawn(targetEntity);
     targetEntity.position = new Vector3(-6, 2, 0);
 
-    // tree.makeBasicTree('tree', 10, this.scene);
-    tree.makeGrass('grass', 8, 100, this.scene);
+    const newTree = tree.makeBasicTree('tree', 10, this.scene);
+    newTree.position.y -= 2;
+    newTree.position.x += 10;
+    // tree.makeGrass('grass', 8, 100, this.scene);
   }
 
   private initInputs() {

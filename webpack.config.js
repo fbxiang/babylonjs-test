@@ -14,6 +14,9 @@ module.exports = {
   },
   plugins: [new HtmlWebpackPlugin({
     template: "./frontend/index.html"
+  }), new HtmlWebpackPlugin({
+    filename: 'test.html',
+    template: "./frontend/test.html"
   }), new CopyWebpackPlugin([{
     from: "frontend/assets", to: "assets"
   }])],

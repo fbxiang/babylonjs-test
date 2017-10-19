@@ -7,7 +7,7 @@ h1 {
   color: firebrick;
 }
 
-#render_canvas {
+canvas {
   width: 100%;
   height: 100%;
   touch-action: none;
