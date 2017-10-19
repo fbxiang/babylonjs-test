@@ -12,6 +12,7 @@ export function makeBasicTree(name: string, height: number, scene: Babylon.Scene
   leaves.scaling.y = 1.5;
   leaves.position.y = height / 2;
   leaves.convertToFlatShadedMesh();
+  return trunk;
 }
 
 function lerp(a, b, w) {

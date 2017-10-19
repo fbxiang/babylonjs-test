@@ -9,3 +9,4 @@ window.CANNON = Cannon;
 const canvas = <HTMLCanvasElement>document.getElementById('render_canvas');
 const game = new Game(canvas);
 game.start();
+
