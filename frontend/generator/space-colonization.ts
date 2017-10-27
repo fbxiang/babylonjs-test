@@ -103,6 +103,12 @@ export class TreeBuilder {
       })
     })
 
+    this._treePoints.forEach(p => {
+      const mesh = Babylon.Mesh.CreateBox('_vis_', 0.1, scene);
+      mesh.position = p;
+      Babylon.Tags.AddTagsTo(mesh, '_vis_');
+    })
+
     return this;
   }
 
@@ -147,6 +153,38 @@ export class TreeBuilder {
       this._nextList.push([]);
       this._nextList[index].push(newTreePointIndex++);
     }
+  }
+
+  simplify() {
+    const treePoints: {[idx: number]: Vector3} = Object.assign({}, this._treePoints);
+    const nextList: {[idx: number]: number[]} = Object.assign({}, this._nextList);
+
+    const q = [0];
+    while (q.length) {
+      const start = q.pop();
+      if (nextList[start].length == 1 && nextList[nextList[start][0]].length == 1 ) {
+        const nextIndex = nextList[start][0];
+        const nextNextList = nextList[nextIndex][0];
+        const dir1 = treePoints[nextIndex].subtract(treePoints[start]);
+        const dir2 = treePoints[nextNextList].subtract(treePoints[start]);
+        if ( Vector3.Dot(dir1, dir2) / Math.sqrt(Vector3.Dot(dir1, dir1)) / Math.sqrt(Vector3.Dot(dir2, dir2)) > Math.cos(Math.PI / 16) ) {
+          nextList[start] = [nextNextList];
+          delete nextList[nextIndex];
+          delete treePoints[nextIndex];
+          q.push(start);
+        }
+      }
+      nextList[start].forEach(i => q.push(i));
+    }
+
+    const remainOldIdx = Object.keys(treePoints).sort();
+    const newIdxLookup = _.invert(Object.assign({}, remainOldIdx));
+
+    this._treePoints = [];
+    remainOldIdx.forEach(idx => this._treePoints.push(treePoints[idx]));
+
+    this._nextList = [];
+    remainOldIdx.forEach(oldIdx => this._nextList.push( nextList[oldIdx].map(idx => newIdxLookup[idx])));
   }
 }
 

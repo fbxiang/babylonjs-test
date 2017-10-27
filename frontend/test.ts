@@ -43,6 +43,8 @@ const builder = new TreeBuilder()
 for (let i = 0; i < 100; i++) {
   builder.grow();
 }
+
+builder.simplify();
 builder.visualize(scene);
 
 engine.runRenderLoop(() => {
