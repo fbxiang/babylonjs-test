@@ -7,4 +7,8 @@ import { Game } from './game';
 window.CANNON = Cannon;
 
 const canvas = <HTMLCanvasElement>document.getElementById('render_canvas');
+if (canvas) {
+  const game = new Game(canvas);
+  game.start();
+}
 import './test';
