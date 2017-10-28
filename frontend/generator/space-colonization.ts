@@ -1,3 +1,8 @@
+/**
+ * Based on Modeling Trees with a Space Colonization Algorithm
+ * http://algorithmicbotany.org/papers/colonization.egwnp2007.large.pdf
+ */
+
 import { Vector3 } from 'babylonjs';
 import * as Babylon from 'babylonjs';
 import * as Random from 'random-js';
@@ -24,9 +29,8 @@ function argmaxBy(arr: any[], fn: (a: any) => number) {
   return argminBy(arr, a => -fn(a));
 }
 
-function distSqured(v1: Vector3,  v2: Vector3) {
-  const dir = v1.subtract(v2);
-  return Vector3.Dot(dir, dir);
+function distSqured(v1: Vector3, v2: Vector3) {
+  return v1.subtract(v2).lengthSquared();
 }
 
 export class TreeBuilder {
@@ -54,9 +58,9 @@ export class TreeBuilder {
       throw 'Attraction points appears to be empty';
   }
 
-  build() {
+  build(scene: Babylon.Scene) {
     this._buildCheck();
-    this._build();
+    this._build(scene);
   }
 
   // Kd in paper
@@ -112,8 +116,7 @@ export class TreeBuilder {
     return this;
   }
 
-  _build() {
-    // run grow several times.
+  _build(scene: Babylon.Scene) {
   }
 
   _getTreePointWithMinDistanceFrom(p: Vector3) {
@@ -123,8 +126,8 @@ export class TreeBuilder {
     });
   }
 
-  _getGrowthPointsInfo() {
-    const growPointsInfo: {[index: string]: Vector3} = {};
+  _getGrowthPointsInfo(): { [index: number]: Vector3 } {
+    const growPointsInfo: { [index: number]: Vector3 } = {};
     this._attractionPoints = this._attractionPoints.filter(p => {
       for (let v of this._treePoints) {
         if (distSqured(v, p) < this._killDistance * this._killDistance)
@@ -137,9 +140,10 @@ export class TreeBuilder {
       const direction = v.subtract(this._treePoints[idx]).normalize();
       growPointsInfo[idx] = growPointsInfo[idx] ? growPointsInfo[idx].add(direction) : direction;
     })
-    return _.mapValues(growPointsInfo, v => v.normalize());
+    return _.mapValues(growPointsInfo, v => (<Vector3>v).normalize());
   }
 
+  // grow for 1 step
   grow() {
     const growthPointsInfo = this._getGrowthPointsInfo();
     let newTreePointIndex = this._treePoints.length;
@@ -147,7 +151,7 @@ export class TreeBuilder {
       const point = this._treePoints[index];
       const direction = growthPointsInfo[index];
       const nextPoint = point.add(new Vector3(
-        this._stepLength * direction.x, this._stepLength * direction.y , this._stepLength * direction.z
+        this._stepLength * direction.x, this._stepLength * direction.y, this._stepLength * direction.z
       ));
       this._treePoints.push(nextPoint);
       this._nextList.push([]);
@@ -155,19 +159,21 @@ export class TreeBuilder {
     }
   }
 
-  simplify() {
-    const treePoints: {[idx: number]: Vector3} = Object.assign({}, this._treePoints);
-    const nextList: {[idx: number]: number[]} = Object.assign({}, this._nextList);
+  // trim tree vertices
+  simplify(angle = Math.PI / 16) {
+    const treePoints: { [idx: number]: Vector3 } = Object.assign({}, this._treePoints);
+    const nextList: { [idx: number]: number[] } = Object.assign({}, this._nextList);
 
     const q = [0];
     while (q.length) {
       const start = q.pop();
-      if (nextList[start].length == 1 && nextList[nextList[start][0]].length == 1 ) {
+      if (nextList[start].length == 1 && nextList[nextList[start][0]].length == 1) {
         const nextIndex = nextList[start][0];
         const nextNextList = nextList[nextIndex][0];
         const dir1 = treePoints[nextIndex].subtract(treePoints[start]);
         const dir2 = treePoints[nextNextList].subtract(treePoints[start]);
-        if ( Vector3.Dot(dir1, dir2) / Math.sqrt(Vector3.Dot(dir1, dir1)) / Math.sqrt(Vector3.Dot(dir2, dir2)) > Math.cos(Math.PI / 16) ) {
+        const cosAngle = Vector3.Dot(dir1.normalize(), dir2.normalize());
+        if (cosAngle > Math.cos(angle)) {
           nextList[start] = [nextNextList];
           delete nextList[nextIndex];
           delete treePoints[nextIndex];
@@ -184,8 +190,54 @@ export class TreeBuilder {
     remainOldIdx.forEach(idx => this._treePoints.push(treePoints[idx]));
 
     this._nextList = [];
-    remainOldIdx.forEach(oldIdx => this._nextList.push( nextList[oldIdx].map(idx => newIdxLookup[idx])));
+    remainOldIdx.forEach(oldIdx => this._nextList.push(nextList[oldIdx].map(idx => newIdxLookup[idx])));
   }
+
+  _computeTrunkRadius(base: number, fn = trunkRadiusFn) {
+    const trunkRadius = new Array<number>(this._treePoints.length);
+    const trunkRadiusRecursive = (start: number) => {
+      let r = 0;
+      if (this._nextList[start].length == 0) {
+        r = base;
+      } else {
+        r = fn(this._nextList[start].map(i => trunkRadiusRecursive(i)));
+      }
+      trunkRadius[start] = r;
+      return r;
+    }
+    trunkRadiusRecursive(0);
+    return trunkRadius;
+  }
+
+  drawTrunk(scene: Babylon.Scene) {
+    const base = new Babylon.Mesh('tree_base', scene);
+    const rs = this._computeTrunkRadius(0.1);
+    const q = [0];
+    while (q.length) {
+      const idx = q.pop();
+      this._nextList[idx].forEach(nextIdx => {
+        const start = this._treePoints[idx];
+        const end = this._treePoints[nextIdx];
+        const radius = rs[nextIdx];
+
+        const d = end.subtract(start);
+        const dir = d.clone().normalize();
+        const up = Vector3.Up();
+        const quat = Babylon.Quaternion.RotationAxis(Vector3.Cross(up, dir), Math.acos(Vector3.Dot(up, dir)));
+
+        const branch = Babylon.Mesh.CreateCylinder('branch', d.length(), radius, radius, 0, 0, scene);
+        branch.parent = base;
+        branch.position = start.add(end).multiplyByFloats(0.5, 0.5, 0.5);
+        branch.rotationQuaternion = quat;
+        q.push(nextIdx);
+      })
+    }
+  }
+}
+
+function trunkRadiusFn(rs: number[]) {
+  // return Math.pow( Math.pow(a, 3) + Math.pow(b, 3), 1 / 3 );
+  return Math.pow(rs.reduce((a, r) => a + Math.pow(r, 3), 0), 1 / 3);
 }
 
 export class Sampling {
@@ -205,9 +257,9 @@ export class Sampling {
   static UniformCube(n: number, a: number, m: Vector3) {
     return _.times(n, () => {
       return new Vector3(
-        rand.real(m.x - a/2, m.x + a/2),
-        rand.real(m.y - a/2, m.y + a/2),
-        rand.real(m.z - a/2, m.z + a/2)
+        rand.real(m.x - a / 2, m.x + a / 2),
+        rand.real(m.y - a / 2, m.y + a / 2),
+        rand.real(m.z - a / 2, m.z + a / 2)
       )
     })
   }
