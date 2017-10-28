@@ -42,6 +42,7 @@ export class TreeBuilder {
 
   _treePoints: Vector3[] = [];
   _nextList: number[][] = [];
+  _parent: number[] = [];
 
   _require(field, name: string) {
     if (!field) {
@@ -58,9 +59,10 @@ export class TreeBuilder {
       throw 'Attraction points appears to be empty';
   }
 
-  build(scene: Babylon.Scene) {
+  build() {
     this._buildCheck();
-    this._build(scene);
+    this._build();
+    return new TreeMeshBuilder(this._treePoints, this._nextList);
   }
 
   // Kd in paper
@@ -85,6 +87,7 @@ export class TreeBuilder {
     this._startPoint = p;
     this._treePoints = [this._startPoint];
     this._nextList = [[]];
+    this._parent = [-1];
     return this;
   }
 
@@ -116,7 +119,11 @@ export class TreeBuilder {
     return this;
   }
 
-  _build(scene: Babylon.Scene) {
+  _build(maxIter=100) {
+    for (let i = 0; i < 100; i++) {
+      this.grow();
+    }
+    this.simplify();
   }
 
   _getTreePointWithMinDistanceFrom(p: Vector3) {
@@ -156,6 +163,7 @@ export class TreeBuilder {
       this._treePoints.push(nextPoint);
       this._nextList.push([]);
       this._nextList[index].push(newTreePointIndex++);
+      this._parent.push(parseInt(index));
     }
   }
 
@@ -163,20 +171,41 @@ export class TreeBuilder {
   simplify(angle = Math.PI / 16) {
     const treePoints: { [idx: number]: Vector3 } = Object.assign({}, this._treePoints);
     const nextList: { [idx: number]: number[] } = Object.assign({}, this._nextList);
+    const parent: { [idx: number]: number } = Object.assign({}, this._parent);
+
+    for (let si of _.keys(treePoints)) {
+      const i = parseInt(si);
+      if (treePoints[i] == null) continue;
+      for (let sj of _.keys(treePoints)) {
+        const j = parseInt(sj);
+        const lsqr = treePoints[i].subtract(treePoints[j]).lengthSquared();
+        if (i != j && lsqr < Math.pow(this._stepLength / 2, 2)) {
+          const jNextList = nextList[j];
+          jNextList.forEach(k => parent[k] = i);
+          nextList[parent[j]] = nextList[parent[j]].filter(k => k != j);
+          nextList[i] = nextList[i].concat(jNextList);
+          delete parent[j];
+          delete nextList[j];
+          delete treePoints[j];
+        }
+      }
+    }
 
     const q = [0];
     while (q.length) {
       const start = q.pop();
       if (nextList[start].length == 1 && nextList[nextList[start][0]].length == 1) {
         const nextIndex = nextList[start][0];
-        const nextNextList = nextList[nextIndex][0];
+        const nextNextIndex = nextList[nextIndex][0];
         const dir1 = treePoints[nextIndex].subtract(treePoints[start]);
-        const dir2 = treePoints[nextNextList].subtract(treePoints[start]);
+        const dir2 = treePoints[nextNextIndex].subtract(treePoints[start]);
         const cosAngle = Vector3.Dot(dir1.normalize(), dir2.normalize());
         if (cosAngle > Math.cos(angle)) {
-          nextList[start] = [nextNextList];
+          nextList[start] = [nextNextIndex];
+          parent[nextNextIndex] = start;
           delete nextList[nextIndex];
           delete treePoints[nextIndex];
+          delete parent[nextIndex];
           q.push(start);
         }
       }
@@ -191,6 +220,42 @@ export class TreeBuilder {
 
     this._nextList = [];
     remainOldIdx.forEach(oldIdx => this._nextList.push(nextList[oldIdx].map(idx => newIdxLookup[idx])));
+
+    this._parent = [];
+    remainOldIdx.forEach(oldIdx => this._parent.push(newIdxLookup[parent[oldIdx]]));
+  }
+
+
+}
+
+function trunkRadiusFn(rs: number[]) {
+  // return Math.pow( Math.pow(a, 3) + Math.pow(b, 3), 1 / 3 );
+  return Math.pow(rs.reduce((a, r) => a + Math.pow(r, 3), 0), 1 / 3);
+}
+
+class TreeMeshBuilder {
+  _minRadius = 0.05;
+  _trunkRadiusFn = (rs) => Math.pow(rs.reduce((a, r) => a + Math.pow(r, 3), 0), 1 / 3);
+
+  _treePoints: Vector3[];
+  _nextList: number[][];
+  constructor(treePoints: Vector3[], nextList: number[][]) {
+    this._treePoints = treePoints;
+    this._nextList = nextList;
+  }
+
+  minTrunkRadius(r: number) {
+    this._minRadius = r;
+    return this;
+  }
+
+  trunkRadiusFn(f: (rs: number[]) => number) {
+    this._trunkRadiusFn = f;
+    return this;
+  }
+
+  build(scene: Babylon.Scene) {
+    this.drawTrunk(scene);
   }
 
   _computeTrunkRadius(base: number, fn = trunkRadiusFn) {
@@ -211,7 +276,7 @@ export class TreeBuilder {
 
   drawTrunk(scene: Babylon.Scene) {
     const base = new Babylon.Mesh('tree_base', scene);
-    const rs = this._computeTrunkRadius(0.1);
+    const rs = this._computeTrunkRadius(this._minRadius);
     const q = [0];
     while (q.length) {
       const idx = q.pop();
@@ -233,11 +298,7 @@ export class TreeBuilder {
       })
     }
   }
-}
 
-function trunkRadiusFn(rs: number[]) {
-  // return Math.pow( Math.pow(a, 3) + Math.pow(b, 3), 1 / 3 );
-  return Math.pow(rs.reduce((a, r) => a + Math.pow(r, 3), 0), 1 / 3);
 }
 
 export class Sampling {

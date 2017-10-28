@@ -37,17 +37,13 @@ const builder = new TreeBuilder()
   .stepLength(0.3)
   .influenceRadius(10)
   .startPoint(Vector3.Zero())
-  .attractionPoints(Sampling.UniformCube(100, 5, new Vector3(0, 5, 0)))
-  // .attractionPoints(Sampling.UniformSphere(1000, 2.5, new Vector3(0, 5, 0)))
+  .attractionPoints(Sampling.UniformCube(1000, 5, new Vector3(0, 5, 0)))
+// .attractionPoints(Sampling.UniformSphere(1000, 2.5, new Vector3(0, 5, 0)))
 
-for (let i = 0; i < 30; i++) {
-  builder.grow();
-}
 
-builder.simplify();
+builder.build().build(scene);
+
 // builder.visualize(scene);
-
-builder.drawTrunk(scene);
 
 engine.runRenderLoop(() => {
   scene.render();
